@@ -398,11 +398,16 @@ function updateTotal() {
 }
 modKYE.onchange=()=> {
   kyeSection.classList.toggle('hidden',!modKYE.checked);
-  if(modKYE.checked) ensureFirst('kye'); updateTotal();
+  kyeSection.querySelectorAll('input').forEach(input => input.disabled = !modKYE.checked);
+  if(modKYE.checked) ensureFirst('kye'); 
+  updateTotal();
 };
+
 modKYS.onchange=()=> {
   kysSection.classList.toggle('hidden',!modKYS.checked);
-  if(modKYS.checked) ensureFirst('kys'); updateTotal();
+  kysSection.querySelectorAll('input').forEach(input => input.disabled = !modKYS.checked);
+  if(modKYS.checked) ensureFirst('kys'); 
+  updateTotal();
 };
 document.getElementById('addKYE').onclick=()=>addRecord('kye');
 document.getElementById('addKYS').onclick=()=>addRecord('kys');
