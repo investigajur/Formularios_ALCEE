@@ -518,9 +518,6 @@ document.querySelectorAll('.decl').forEach(cb=>{
 document.getElementById('confirm').addEventListener('change',()=>validateCriticalSubmissionFields(false));
 document.getElementById('pixProof').addEventListener('change',()=>validateCriticalSubmissionFields(false));
 
-/* ====== INTEGRAÇÃO COM GOOGLE APPS SCRIPT ======
-   1) Publique o Code.gs (fornecido junto com este arquivo) como Web App no Google Apps Script.
-   2) Cole abaixo a URL de implantação (termina em /exec). */
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxSD_ZeYi7_ODm9a22n8Nztw6Qxy49Fe9zOC_wfxa93uniJa6Uu2zqLyPd2Nc67_Hb46g/exec';
 
 function fileToBase64(file) {
@@ -543,7 +540,6 @@ document.getElementById('sendBtn').onclick = async () => {
   const form = document.getElementById('ddForm');
   const sendBtn = document.getElementById('sendBtn');
 
-  // Bloqueio obrigatório: declarações + confirmação + comprovante Pix
   if (!validateCriticalSubmissionFields(true)) {
     const v = document.getElementById('validation');
     v.style.display = 'block';
