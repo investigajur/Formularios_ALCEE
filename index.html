@@ -611,7 +611,7 @@ document.getElementById('confirm').addEventListener('change', () => validateCrit
 document.getElementById('pixProof').addEventListener('change', () => validateCriticalSubmissionFields(false));
 
 
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxSD_ZeYi7_ODm9a22n8Nztw6Qxy49Fe9zOC_wfxa93uniJa6Uu2zqLyPd2Nc67_Hb46g/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxdmm8Tr4xb-p6OAUFJHsuLxN-kSZjEJQyMvm1An58kKgT0nJrqobwAiPp0v4YU0nQdHg/exec';
 
 let isSubmitting = false;
 
@@ -637,6 +637,43 @@ function collectRecords(cls, nameCls) {
   const names = [...document.querySelectorAll(nameCls)];
   return ids.map((el, i) => ({ nome: names[i] ? names[i].value : '', documento: el.value }))
             .filter(r => r.documento.trim() !== '' || r.nome.trim() !== '');
+}
+
+function montarResumo(p) {
+  const lista = itens => itens.length
+    ? itens.map((r, i) => `  ${i + 1}. ${r.nome || '-'} | ${r.documento || '-'}`).join('\n')
+    : '  (nenhum)';
+  const reuniao = p.reuniao.solicitada
+    ? `SIM - ${p.reuniao.meio || '-'}: ${p.reuniao.contato || '-'}`
+    : 'Não';
+  return [
+    'NOVA SOLICITAÇÃO DE DUE DILIGENCE',
+    '',
+    `Solicitante: ${p.solicitante || '-'}`,
+    `CNPJ: ${p.cnpj_solicitante || '-'}`,
+    `Responsável: ${p.responsavel || '-'}`,
+    `Cargo: ${p.cargo || '-'}`,
+    `E-mail: ${p.email || '-'}`,
+    `Telefone: ${p.telefone || '-'}`,
+    '',
+    `Modalidades: ${p.modalidades.join(', ') || '-'}`,
+    `Finalidades: ${p.finalidades.join(', ') || '-'}`,
+    '',
+    'KYE (pessoas físicas):',
+    lista(p.kye),
+    '',
+    'KYS (pessoas jurídicas):',
+    lista(p.kys),
+    '',
+    `Objetivo: ${p.objetivo || '-'}`,
+    `Informações adicionais: ${p.adicionais || '-'}`,
+    '',
+    `Investimento total: ${p.investimentoTotal || '-'}`,
+    `Reunião solicitada: ${reuniao}`,
+    `Declarações aceitas: ${p.declaracoesAceitas ? 'Sim' : 'Não'}`,
+    `Confirmação: ${p.confirmacao ? 'Sim' : 'Não'}`,
+    `Comprovante Pix: ${p.anexo ? p.anexo.nomeArquivo : 'não anexado'}`
+  ].join('\n');
 }
 
 document.getElementById('sendBtn').onclick = async () => {
@@ -714,8 +751,19 @@ document.getElementById('sendBtn').onclick = async () => {
       payload.anexo = {
         nomeArquivo: proofFile.name,
         tipoMime: proofFile.type || 'application/octet-stream',
-        base64: await fileToBase64(proofFile) 
+        base64: await fileToBase64(proofFile)
       };
+    }
+
+    // Campos no formato que o Apps Script atual lê (subject/body/replyTo/fileBase64)
+    payload.subject = 'Solicitação de Due Diligence - ' + (payload.solicitante || 'sem nome') +
+      (payload.reuniao.solicitada ? ' (reunião)' : '');
+    payload.body = montarResumo(payload);
+    payload.replyTo = payload.email;
+    if (payload.anexo) {
+      payload.fileBase64 = payload.anexo.base64;
+      payload.mimeType = payload.anexo.tipoMime;
+      payload.fileName = payload.anexo.nomeArquivo;
     }
 
     const response = await fetch(APPS_SCRIPT_URL, {
@@ -726,8 +774,8 @@ document.getElementById('sendBtn').onclick = async () => {
 
     const result = await response.json().catch(() => ({ ok: response.ok }));
 
-    if (!response.ok || result.ok === false) {
-      throw new Error(result.error || 'Falha no envio.'); 
+    if (!response.ok || result.ok === false || result.status === 'error') {
+      throw new Error(result.error || result.message || 'Falha no envio.');
     }
 
     const v = document.getElementById('validation');
